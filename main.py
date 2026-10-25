@@ -9,12 +9,38 @@ window.title = "Pong - Game"
 screen = window.get_surface()
 gameStarted = False
 running = True
+playerWidth = 20
+playerHeight = 200
+playerX = 75
+playerY = (screenHeight - playerHeight) // 2
+ballX = screenWidth // 2
+ballY = screenHeight // 2
+ballRadius = 20
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RETURN and not gameStarted:
-                gameStarted = True
-    keys = pygame.key.get_pressed()
-    y_axis = keys[pygame.K_DOWN] - keys[pygame.K_UP]
+    screen.fill((0, 0, 0))
+    if gameStarted:
+        keys = pygame.key.get_pressed()
+        movement = keys[pygame.K_DOWN] - keys[pygame.K_UP]
+        playerY += movement * 5
+        playerY = max(0, min(screenHeight - playerHeight, playerY))
+        player = pygame.Rect(playerX, playerY, playerWidth, playerHeight)
+        pygame.draw.rect(screen, (255, 255, 255), player)
+        pygame.draw.circle(screen, (255,255,255), (ballX, ballY), ballRadius)
+        ballX += 5
+        ballY += 5
+        ballX = max(ballRadius, min(screenWidth - ballRadius, ballX))
+        ballY = max(ballRadius, min(screenHeight - ballRadius, ballY))
+        if screenWidth - ballRadius 
+    else:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN and not gameStarted:
+                    gameStarted = True
+
+
+
+
+    window.flip()
+    await asyncio.sleep(1 / 120)
