@@ -1,5 +1,6 @@
 import asyncio
 import pygame
+import js
 
 pygame.init()
 screenWidth = 1280
@@ -30,7 +31,13 @@ while running:
         ballY += 5
         ballX = max(ballRadius, min(screenWidth - ballRadius, ballX))
         ballY = max(ballRadius, min(screenHeight - ballRadius, ballY))
-        if screenWidth - ballRadius 
+        if ballX == screenWidth - ballRadius:
+            ballXDir = "left"
+            js.window.alert(ballXDir)
+        elif ballX == ballRadius:
+            ballXDir = "right"
+            js.window.alert(ballXDir)
+        
     else:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
