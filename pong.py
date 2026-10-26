@@ -46,8 +46,7 @@ ballXDir = random.choice(["left", "right"])
 ballYDir = random.choice(["up", "down"])
 ballSpeedX = 5
 ballSpeedY = 5
-font = pygame.font.SysFont("System", 30)
-text = 
+font = pygame.font.SysFont("System", 50)
 def setupGame():
     global playerY, ballX, ballY, ballXDir, ballYDir, ballSpeedX, ballSpeedY
     playerY = (screenHeight - playerHeight) // 2
@@ -100,6 +99,10 @@ while running:
             ballX += ballSpeedX
         
     else:
+        instructions = font.render("Press ENTER to start the game", True, (255, 255, 255))
+        instructionsRect = instructions.get_rect()
+        instructionsRect.center = (screenWidth // 2, screenHeight // 2)
+        screen.blit(instructions, instructionsRect)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
