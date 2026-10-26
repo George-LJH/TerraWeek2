@@ -1,41 +1,31 @@
 import asyncio
 import pygame
 import js
-# Source - https://stackoverflow.com/a/24728182
-# Posted by martineau, modified by community. See post 'Timeline' for change history
-# Retrieved 2026-10-26, License - CC BY-SA 3.0
-
 import math
+import random
 
-def collision(rleft, rtop, width, height,   # rectangle definition
-              center_x, center_y, radius):  # circle definition
-    """ Detect collision between a rectangle and circle. """
+def collision(circle_pos, circle_radius, rect):
+    """Detects collision between a circle and a pygame.Rect without sprites.
 
-    # complete boundbox of the rectangle
-    rright, rbottom = rleft + width/2, rtop + height/2
+    circle_pos: A tuple or pygame.Vector2 (x, y) representing the circle's
+    center.
+    circle_radius: The radius of the circle (int or float).
+    rect: A pygame.Rect object.
+    """
+    # 1. Clamp the circle's center coordinates to the rectangle's boundaries
+    # This finds the closest point on or inside the rectangle
+    closest_x = max(rect.left, min(circle_pos[0], rect.right))
+    closest_y = max(rect.top, min(circle_pos[1], rect.bottom))
 
-    # bounding box of the circle
-    cleft, ctop     = center_x-radius, center_y-radius
-    cright, cbottom = center_x+radius, center_y+radius
+    # 2. Calculate the distance from the circle's center to this closest point
+    distance_x = circle_pos[0] - closest_x
+    distance_y = circle_pos[1] - closest_y
 
-    # trivial reject if bounding boxes do not intersect
-    if rright < cleft or rleft > cright or rbottom < ctop or rtop > cbottom:
-        return False  # no collision possible
+    # 3. Use the Pythagorean theorem (squared) to avoid a slow square root function
+    distance_squared = (distance_x**2) + (distance_y**2)
 
-    # check whether any point of rectangle is inside circle's radius
-    for x in (rleft, rleft+width):
-        for y in (rtop, rtop+height):
-            # compare distance between circle's center point and each point of
-            # the rectangle with the circle's radius
-            if math.hypot(x-center_x, y-center_y) <= radius:
-                return True  # collision detected
-
-    # check if center of circle is inside rectangle
-    if rleft <= center_x <= rright and rtop <= center_y <= rbottom:
-        return True  # overlaid
-
-    return False  # no collision detected
-
+    # 4. If the distance is less than the radius squared, they are colliding
+    return distance_squared <= (circle_radius**2)
 
 pygame.init()
 screenWidth = 1280
@@ -52,8 +42,21 @@ playerY = (screenHeight - playerHeight) // 2
 ballX = screenWidth // 2
 ballY = screenHeight // 2
 ballRadius = 20
-ballXDir = "right"
-ballYDir = "down"
+ballXDir = random.choice(["left", "right"])
+ballYDir = random.choice(["up", "down"])
+ballSpeedX = 5
+ballSpeedY = 5
+def setupGame():
+    global playerY, ballX, ballY, ballXDir, ballYDir, ballSpeedX, ballSpeedY
+    playerY = (screenHeight - playerHeight) // 2
+    ballX = screenWidth // 2
+    ballY = screenHeight // 2
+    ballXDir = "right"
+    ballXDir = random.choice(["left", "right"])
+    ballYDir = "down"
+    ballYDir = random.choice(["up", "down"])
+    ballSpeedX = 5
+    ballSpeedY = 5
 while running:
     screen.fill((0, 0, 0))
     if gameStarted:
@@ -72,25 +75,25 @@ while running:
             ballXDir = "left"
             # js.window.alert(ballXDir)
         elif ballX == ballRadius:
-            ballXDir = "right"
+            setupGame()
+            gameStarted = False
         if ballY >= screenHeight - ballRadius:
             ballYDir = "up"
         elif ballY - ballRadius == 0:
             ballYDir = "down"
-            # js.window.alert(ballXDir)
         if ballYDir == "up":
-            ballY -= 5
+            ballY -= ballSpeedY
         elif ballYDir == "down":
-            ballY += 5
+            ballY += ballSpeedY
         if ballXDir == "left":
-            ballX -= 5
-        if collision(playerX, playerY, playerWidth, playerHeight, ballX, ballY, ballRadius):
-            if ballXDir == "right":
-                ballXDir = "left"
-            elif ballXDir == "left":
+            ballX -= ballSpeedX
+        if collision((ballX, ballY), ballRadius, pygame.Rect(playerX, playerY, playerWidth, playerHeight)):
+            if ballXDir == "left":
                 ballXDir = "right"
-        elif ballXDir == "right":
-            ballX += 5
+                ballSpeedX += random.randint(1, 3)
+                ballSpeedY += random.randint(1, 3)
+        if ballXDir == "right":
+            ballX += ballSpeedX
         
     else:
         for event in pygame.event.get():
