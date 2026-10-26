@@ -46,6 +46,8 @@ ballXDir = random.choice(["left", "right"])
 ballYDir = random.choice(["up", "down"])
 ballSpeedX = 5
 ballSpeedY = 5
+font = pygame.font.SysFont("System", 30)
+text = 
 def setupGame():
     global playerY, ballX, ballY, ballXDir, ballYDir, ballSpeedX, ballSpeedY
     playerY = (screenHeight - playerHeight) // 2
@@ -91,7 +93,9 @@ while running:
             if ballXDir == "left":
                 ballXDir = "right"
                 ballSpeedX += random.randint(1, 3)
+                ballSpeedX = max(-5, min(ballSpeedX, 5))
                 ballSpeedY += random.randint(1, 3)
+                ballSpeedY = max(-5, min(ballSpeedY, 5))
         if ballXDir == "right":
             ballX += ballSpeedX
         
@@ -102,6 +106,7 @@ while running:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN and not gameStarted:
                     gameStarted = True
+        
 
 
 
