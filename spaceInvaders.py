@@ -3,6 +3,14 @@ import sys
 import json
 import js
 import asyncio
+
+# restart game
+def resetGame():
+    # variables to reset
+    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins
+    gameStarted = False
+    playerX = screenWidth // 2
+
 def save(key, value):
     js.localStorage.setItem(str(key), str(value))
 
@@ -21,6 +29,7 @@ def font(size):
 # Initialize Pygame
 pygame.init()
 
+
 # Game Constants
 screenWidth = 945
 screenHeight = 1080
@@ -34,7 +43,8 @@ scoreFont = pygame.font.Font("spaceInvadersFont.ttf", 20)
 gameStarted = False
 playerScore = 0
 coins = 0
-
+playerSpeed = 5
+playerX = screenWidth // 2
 Point10 = pygame.image.load('10Points.png').convert()
 Point10 = pygame.transform.smoothscale_by(Point10, 0.4)
 Point10.set_colorkey((0, 0, 0))
@@ -65,15 +75,30 @@ ufoRect.center = (screenWidth // 2 - 200, screenHeight // 2)
 tintHeight = 300
 tintSurface = pygame.Surface((screenWidth, tintHeight), pygame.SRCALPHA)
 tintSurface.fill((0, 255, 0, 100))
+
+player = pygame.image.load('player.png').convert()
+player = pygame.transform.smoothscale_by(player, 0.4)
+player.set_colorkey((0, 0, 0))
+playerRect = player.get_rect()
+playerRect.center = (playerX, screenHeight // 2 + 300)
+
+# 0 = 10 points, 1 = 20 points, 2 = 30 points, 3 = ufo, 4 = none
+enemyList = [
+2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+]
+
+bullet = pygame.image.load('laser.png').convert()
+bullet = pygame.transform.smoothscale_by(bullet, 0.4)
+bullet.set_colorkey((0, 0, 0))
+bulletRect = bullet.get_rect()
+bulletRect.center = (playerX, screenHeight // 2 + 300)
 # Game Loop
 running = True
 
-# restart game
-def resetGame():
-    # variables to reset
-    global gameStarted, playerScore
-    gameStarted = False
-    playerScore = 0
 while running:
     # 1. Event Handling
     for event in pygame.event.get():
@@ -87,7 +112,17 @@ while running:
                     gameStarted = True
                     coins -= 1
                     playerScore = 0
-
+            if gameStarted and event.key == pygame.K_SPACE:
+                # Implement shooting logic here
+                
+                pass
+    if gameStarted:
+        keys = pygame.key.get_pressed()
+        moveX = (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]) * playerSpeed
+        playerX += moveX
+        playerX = max(0 + playerRect.width // 2, min(screenWidth - playerRect.width // 2, playerX))
+        
+        playerRect.center = (playerX, screenHeight // 2 + 450)
     # 2. Game Logic Updates
     # (Update positions, check collisions, etc.)
 
@@ -148,11 +183,12 @@ while running:
         screen.blit(coinText, coinTextRect)
 
 
-
         # Tint effect at the bottom of the screen to mimic original game
         screen.blit(tintSurface, (0, screenHeight - tintHeight), special_flags=pygame.BLEND_RGB_MULT)
     else:
         # Draw game objects
+        screen.blit(player, playerRect)
+        screen.blit(bullet, bulletRect)
         pass
 
     window.flip()

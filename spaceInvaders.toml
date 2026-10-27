@@ -5,3 +5,5 @@ packages = []
 "20Points.png" = "20Points.png"
 "30Points.png" = "30Points.png"
 "UFO.png" = "ufo.png"
+"player.png" = "player.png"
+"laser.png" = "laser.png"
