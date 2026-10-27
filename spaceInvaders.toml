@@ -1,3 +1,7 @@
 packages = []
 [files]
 "spaceInvaders.ttf" = "spaceInvadersFont.ttf"
+"10Points.png" = "10Points.png"
+"20Points.png" = "20Points.png"
+"30Points.png" = "30Points.png"
+"UFO.png" = "ufo.png"
