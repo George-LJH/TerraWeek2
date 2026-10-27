@@ -79,6 +79,9 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_z:
+                coins += 1
 
     # 2. Game Logic Updates
     # (Update positions, check collisions, etc.)
@@ -89,6 +92,7 @@ while running:
     # (Draw your objects here)
     if not gameStarted:
         # Draw start screen
+
         scoreText = scoreFont.render("SCORE<1>", True, (255, 255, 255))
 
         hiScoreText = scoreFont.render("HI-SCORE", True, (255, 255, 255))
@@ -145,6 +149,7 @@ while running:
     else:
         # Draw game objects
         pass
+
     window.flip()
     await asyncio.sleep(1 / fps)
 
