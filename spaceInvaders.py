@@ -3,22 +3,19 @@ import sys
 import json
 import js
 import asyncio
+def save(key, value):
+    """Saves a key-value pair to browser localStorage."""
+    js.localStorage.setItem(str(key), str(value))
 
-def save(key: str, data_list: list):
-  json_string = json.dumps(data_list)
-  js.localStorage.setItem(key, json_string)
+def load(key):
+    """
+    Loads a value from browser localStorage by key.
+    """
+    val = js.localStorage.getItem(str(key))
+    if type(val) != int:
+        return 0
+    return int(val)
 
-
-def load(key: str) -> list:
-  item = js.localStorage.getItem(key)
-  if item and item != "null":
-    try:
-      parsed = json.loads(item)
-      if isinstance(parsed, list):
-        return parsed
-    except (json.JSONDecodeError, TypeError):
-      pass
-  return []
 
 # Initialize Pygame
 pygame.init()
@@ -31,18 +28,12 @@ window = pygame.Window(size=(screenWidth, screenHeight))
 window.title = "Space Invaders - Game"
 screen = window.get_surface()
 fps = 60
-font = pygame.font.Font("spaceInvadersFont.ttf", 36)
-
-text_surface = font.render(
-    "Hello! Testing Font 12345", True, (255, 255, 255)
-)
-text_rect = text_surface.get_rect(center=(screenWidth // 2, screenHeight // 2))
+scoreFont = pygame.font.Font("spaceInvadersFont.ttf", 20)
 #Setup variables
 gameStarted = False
-
+playerScore = 0
 # Game Loop
 running = True
-leaderboard = load("leaderboard")
 # restart game
 def resetGame():
     # variables to rest
@@ -62,11 +53,25 @@ while running:
     # (Draw your objects here)
     if not gameStarted:
         # Draw start screen
-        pass
+        scoreText = scoreFont.render("Score<1>", True, (255, 255, 255))
+
+        hiScoreText = scoreFont.render("Hi-Score", True, (255, 255, 255))
+        hiScoreRect = hiScoreText.get_rect()
+        hiScoreRect.topright = (935, 10)
+
+        currentScoreText = scoreFont.render(str(playerScore), True, (255, 255, 255))
+
+        hiScore = load("hiScore")
+        currentHiScoreText = scoreFont.render(str(hiScore), True, (255, 255, 255))
+        currentHiScoreRect = currentHiScoreText.get_rect()
+        currentHiScoreRect.topright = (935, 60)
+        screen.blit(scoreText, (10, 10))
+        screen.blit(hiScoreText, hiScoreRect)
+        screen.blit(currentScoreText, (10, 60))
+        screen.blit(currentHiScoreText, currentHiScoreRect)
     else:
         # Draw game objects
         pass
-    screen.blit(text_surface, text_rect)
     window.flip()
     await asyncio.sleep(1 / fps)
 
