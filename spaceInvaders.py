@@ -33,6 +33,8 @@ scoreFont = pygame.font.Font("spaceInvadersFont.ttf", 20)
 #Setup variables
 gameStarted = False
 playerScore = 0
+coins = 0
+
 Point10 = pygame.image.load('10Points.png').convert()
 Point10 = pygame.transform.smoothscale_by(Point10, 0.4)
 Point10.set_colorkey((0, 0, 0))
@@ -117,6 +119,8 @@ while running:
         ufoText = font(20).render("= ? MYSTERY", True, (255, 255, 255))
         ufoTextRect = ufoText.get_rect(midleft=(ufoRect.right + 10, ufoRect.centery))
         
+        coinText = font(20).render(f"CREDIT: {min(99, coins):02d}", True, (255, 255, 255))
+        coinTextRect = coinText.get_rect(topright=(screenWidth - 10, screenHeight - 50))
         screen.blit(scoreTableTitle, scoreTableTitleRect)
         screen.blit(startText, startTextRect)
         screen.blit(gameTitle, gameTitleRect)
@@ -132,7 +136,7 @@ while running:
         screen.blit(Point20Text, Point20TextRect)
         screen.blit(Point30Text, Point30TextRect)
         screen.blit(ufoText, ufoTextRect)
-
+        screen.blit(coinText, coinTextRect)
 
 
 
