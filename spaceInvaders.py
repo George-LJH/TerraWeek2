@@ -82,6 +82,11 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_z:
                 coins += 1
+            if event.key == pygame.K_RETURN:
+                if not gameStarted and coins >= 1:
+                    gameStarted = True
+                    coins -= 1
+                    playerScore = 0
 
     # 2. Game Logic Updates
     # (Update positions, check collisions, etc.)
