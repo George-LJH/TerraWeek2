@@ -3,11 +3,12 @@ import sys
 import json
 import js
 import asyncio
+import random
 
 # restart game
 def resetGame():
     # variables to reset
-    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop
+    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime
     gameStarted = False
     playerX = screenWidth // 2
     enemyList = [
@@ -21,6 +22,7 @@ def resetGame():
     enemySpacingY = 75
     enemySpacingTop = 120
     enemySpacingLeft = 30
+    currentTime = pygame.time.Clock()
 
 def checkGameOver():
     global enemySpacingTop, gameStarted, enemyList
@@ -170,8 +172,8 @@ enemyList = [
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
-
-# js.alert(getFrontMostEnemies(enemyList))
+front = getFrontMostEnemies(enemyList)
+js.alert(random.choice(front))
 # for i in getFrontMostEnemies(enemyList):
 #     js.alert(getCoordsFromIndex(i[0], i[1]))
 
@@ -180,11 +182,18 @@ bullet = pygame.transform.smoothscale_by(bullet, 0.4)
 bullet.set_colorkey((0, 0, 0))
 bulletRect = bullet.get_rect()
 bulletRect.center = (playerX, playerY)
-
+currentTime = pygame.time.Clock()
+enemyTimer = 0
+enemyBullet = pygame.image.load('laser.png').convert_alpha()
+enemyBullet = pygame.transform.smoothscale_by(enemyBullet, 0.4)
+enemyBulletRect = enemyBullet.get_rect()
+enemyBulletRect.center = (screenWidth // 2, screenHeight // 2)
+enemyBulletActive = False
 # Game Loop
 running = True
 
 while running:
+    dt = currentTime.tick(fps)
     # 1. Event Handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -197,15 +206,19 @@ while running:
                     gameStarted = True
                     coins -= 1
                     playerScore = 0
+                    currentTime = pygame.time.Clock()
+                    js.alert(currentTime)
             if gameStarted and event.key == pygame.K_SPACE:
                 if not bulletActive:
                     bulletRect.center = (playerX, playerY)
                     bulletActive = True
             if event.key == pygame.K_0:
                 js.alert(f"{enemySpacingTop}, {enemySpacingLeft}")
+                js.alert(currentTime)
             if event.key == pygame.K_r:
                 resetGame()
     if gameStarted:
+        enemyTimer += dt
         keys = pygame.key.get_pressed()
         moveX = (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]) * playerSpeed
         playerX += moveX
@@ -328,7 +341,24 @@ while running:
         checkGameOver()
         if bulletActive:
             screen.blit(bullet, bulletRect)
+        if enemyBulletActive:
+            enemyBulletRect.y += bulletSpeed
+            screen.blit(enemyBullet, enemyBulletRect)
+            if enemyBulletRect.top > screenHeight:
+                enemyBulletActive = False
+        
+        if enemyTimer >= 2000:
+            # enemy shooting logic
+            front = getFrontMostEnemies(enemyList)
+            # js.alert(random.choice(front))
+            enemyBulletActive = True
+            enemyIndexRow, enemyIndexCol = random.choice(front)
+            enemyBulletRect.center = getCoordsFromIndex(enemyIndexRow, enemyIndexCol)
 
+
+
+
+            enemyTimer = 0
     screen.blit(tintSurface, (0, screenHeight - tintHeight), special_flags=pygame.BLEND_RGB_MULT)
     window.flip()
     await asyncio.sleep(1 / fps)
