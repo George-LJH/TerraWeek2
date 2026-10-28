@@ -1,9 +1,9 @@
 packages = []
 [files]
-"spaceInvaders.ttf" = "spaceInvadersFont.ttf"
-"10Points.png" = "10Points.png"
-"20Points.png" = "20Points.png"
-"30Points.png" = "30Points.png"
-"UFO.png" = "ufo.png"
-"player.png" = "player.png"
-"laser.png" = "laser.png"
+"https://cdn.jsdelivr.net/gh/George-LJH/TerraWeek2@HEAD/spaceInvaders.ttf" = "spaceInvadersFont.ttf"
+"https://cdn.jsdelivr.net/gh/George-LJH/TerraWeek2@HEAD/10Points.png" = "10Points.png"
+"https://cdn.jsdelivr.net/gh/George-LJH/TerraWeek2@HEAD/20Points.png" = "20Points.png"
+"https://cdn.jsdelivr.net/gh/George-LJH/TerraWeek2@HEAD/30Points.png" = "30Points.png"
+"https://cdn.jsdelivr.net/gh/George-LJH/TerraWeek2@HEAD/UFO.png" = "ufo.png"
+"https://cdn.jsdelivr.net/gh/George-LJH/TerraWeek2@HEAD/player.png" = "player.png"
+"https://cdn.jsdelivr.net/gh/George-LJH/TerraWeek2@HEAD/laser.png" = "laser.png"
