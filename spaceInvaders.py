@@ -80,7 +80,19 @@ def isCollide(bulletPosition, enemyIndexRow, enemyIndexCol):
         return True
     return False
     
-
+def getCoordsFromIndex(enemyIndexRow, enemyIndexCol):
+    global enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop
+    enemyX = enemyIndexCol * enemySpacingX + enemySpacingLeft
+    enemyY = enemyIndexRow * enemySpacingY + enemySpacingTop
+    return (enemyX, enemyY)
+def getFrontMostEnemyInEachColumn(enemyList):
+    frontMostEnemies = []
+    for col in range(len(enemyList[0])):
+        for row in reversed(range(len(enemyList))):
+            if enemyList[row][col] != 4:
+                frontMostEnemies.append((row, col))
+                break
+    return frontMostEnemies
 # Initialize Pygame
 pygame.init()
 
@@ -159,12 +171,16 @@ enemyList = [
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
 
+js.alert(getFrontMostEnemyInEachColumn(enemyList))
+for i in getFrontMostEnemyInEachColumn(enemyList):
+    js.alert(getCoordsFromIndex(i[0], i[1]))
 
 bullet = pygame.image.load('laser.png').convert()
 bullet = pygame.transform.smoothscale_by(bullet, 0.4)
 bullet.set_colorkey((0, 0, 0))
 bulletRect = bullet.get_rect()
 bulletRect.center = (playerX, playerY)
+
 # Game Loop
 running = True
 
