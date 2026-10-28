@@ -85,7 +85,7 @@ def getCoordsFromIndex(enemyIndexRow, enemyIndexCol):
     enemyX = enemyIndexCol * enemySpacingX + enemySpacingLeft
     enemyY = enemyIndexRow * enemySpacingY + enemySpacingTop
     return (enemyX, enemyY)
-def getFrontMostEnemyInEachColumn(enemyList):
+def getFrontMostEnemies(enemyList):
     frontMostEnemies = []
     for col in range(len(enemyList[0])):
         for row in reversed(range(len(enemyList))):
@@ -171,9 +171,9 @@ enemyList = [
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
 
-js.alert(getFrontMostEnemyInEachColumn(enemyList))
-for i in getFrontMostEnemyInEachColumn(enemyList):
-    js.alert(getCoordsFromIndex(i[0], i[1]))
+# js.alert(getFrontMostEnemies(enemyList))
+# for i in getFrontMostEnemies(enemyList):
+#     js.alert(getCoordsFromIndex(i[0], i[1]))
 
 bullet = pygame.image.load('laser.png').convert()
 bullet = pygame.transform.smoothscale_by(bullet, 0.4)
