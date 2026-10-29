@@ -8,7 +8,7 @@ import random
 # restart game
 def resetGame():
     # variables to reset
-    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime
+    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted
     gameStarted = False
     playerX = screenWidth // 2
     enemyList = [
@@ -23,14 +23,18 @@ def resetGame():
     enemySpacingTop = 120
     enemySpacingLeft = 30
     currentTime = pygame.time.Clock()
+    lives = 3
+    extraLivesGranted = False
+
+
 
 def checkGameOver():
     global enemySpacingTop, gameStarted, enemyList
-    if (enemySpacingTop >= 610 and any(item != 4 for item in enemyList[4])) or \
-       (enemySpacingTop >= 690 and any(item != 4 for item in enemyList[3])) or \
-       (enemySpacingTop >= 770 and any(item != 4 for item in enemyList[2])) or \
-       (enemySpacingTop >= 850 and any(item != 4 for item in enemyList[1])) or \
-       (enemySpacingTop >= 930 and any(item != 4 for item in enemyList[0])):
+    if (enemySpacingTop >= 527 and any(item != 4 for item in enemyList[4])) or \
+       (enemySpacingTop >= 601 and any(item != 4 for item in enemyList[3])) or \
+       (enemySpacingTop >= 675 and any(item != 4 for item in enemyList[2])) or \
+       (enemySpacingTop >= 749 and any(item != 4 for item in enemyList[1])) or \
+       (enemySpacingTop >= 823 and any(item != 4 for item in enemyList[0])):
         
         gameStarted = False
         resetGame()
@@ -95,6 +99,19 @@ def getFrontMostEnemies(enemyList):
                 frontMostEnemies.append((row, col))
                 break
     return frontMostEnemies
+def enemyGone():
+    global enemyList
+    for row in enemyList:
+        if any(enemy != 4 for enemy in row):
+            return False
+    return True
+def displayLives():
+    global screen, player, lives
+    for i in range(lives):
+        x = 10 + i * (player.get_width() + 10)
+        y = screen.get_height() - player.get_height() - 10
+        screen.blit(player, (x, y))
+
 # Initialize Pygame
 pygame.init()
 
@@ -116,7 +133,7 @@ playerScore = 0
 coins = 0
 playerSpeed = 5
 playerX = screenWidth // 2
-playerY = screenHeight // 2 + 450
+playerY = screenHeight // 2 + 350
 bulletActive = False
 bulletSpeed = 12
 
@@ -189,6 +206,9 @@ enemyBullet = pygame.transform.smoothscale_by(enemyBullet, 0.4)
 enemyBulletRect = enemyBullet.get_rect()
 enemyBulletRect.center = (screenWidth // 2, screenHeight // 2)
 enemyBulletActive = False
+lives = 3
+invincibility = False
+extraLivesGranted = False
 # Game Loop
 running = True
 
@@ -217,6 +237,8 @@ while running:
                 js.alert(currentTime)
             if event.key == pygame.K_r:
                 resetGame()
+            if event.key == pygame.K_9:
+                invincibility = not invincibility
     if gameStarted:
         enemyTimer += dt
         keys = pygame.key.get_pressed()
@@ -341,24 +363,36 @@ while running:
         checkGameOver()
         if bulletActive:
             screen.blit(bullet, bulletRect)
-        if enemyBulletActive:
+        if enemyBulletActive and not invincibility:
             enemyBulletRect.y += bulletSpeed
             screen.blit(enemyBullet, enemyBulletRect)
             if enemyBulletRect.top > screenHeight:
                 enemyBulletActive = False
+            if enemyBulletRect.colliderect(playerRect):
+                enemyBulletRect.y = -1000
+                lives -= 1
+
+                if lives <= 0:
+                    enemyBulletActive = False
+                    bulletActive = False
+                    gameStarted = False
+                    resetGame()
         
-        if enemyTimer >= 2000:
+        if enemyTimer >= 2000 :
             # enemy shooting logic
             front = getFrontMostEnemies(enemyList)
             # js.alert(random.choice(front))
             enemyBulletActive = True
             enemyIndexRow, enemyIndexCol = random.choice(front)
             enemyBulletRect.center = getCoordsFromIndex(enemyIndexRow, enemyIndexCol)
-
-
-
-
             enemyTimer = 0
+        displayLives()
+        
+        if enemyGone():
+            resetGame()
+        if playerScore >= 1500 and not extraLivesGranted:
+            lives += 1
+            extraLivesGranted = True
     screen.blit(tintSurface, (0, screenHeight - tintHeight), special_flags=pygame.BLEND_RGB_MULT)
     window.flip()
     await asyncio.sleep(1 / fps)
