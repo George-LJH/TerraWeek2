@@ -4,11 +4,11 @@ import json
 import js
 import asyncio
 import random
-
+import time
 # restart game
 def resetGame():
     # variables to reset
-    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted
+    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted, gameOver
     gameStarted = False
     playerX = screenWidth // 2
     enemyList = [
@@ -25,19 +25,18 @@ def resetGame():
     currentTime = pygame.time.Clock()
     lives = 3
     extraLivesGranted = False
-
-
-
+    gameOver = False
 def checkGameOver():
-    global enemySpacingTop, gameStarted, enemyList
-    if (enemySpacingTop >= 527 and any(item != 4 for item in enemyList[4])) or \
-       (enemySpacingTop >= 601 and any(item != 4 for item in enemyList[3])) or \
-       (enemySpacingTop >= 675 and any(item != 4 for item in enemyList[2])) or \
-       (enemySpacingTop >= 749 and any(item != 4 for item in enemyList[1])) or \
-       (enemySpacingTop >= 823 and any(item != 4 for item in enemyList[0])):
-        
+    global enemySpacingTop, gameStarted, enemyList, fps, gameOver
+    if (enemySpacingTop >= 597 and any(item != 4 for item in enemyList[4])) or \
+       (enemySpacingTop >= 671 and any(item != 4 for item in enemyList[3])) or \
+       (enemySpacingTop >= 745 and any(item != 4 for item in enemyList[2])) or \
+       (enemySpacingTop >= 819 and any(item != 4 for item in enemyList[1])) or \
+       (enemySpacingTop >= 893 and any(item != 4 for item in enemyList[0])):
         gameStarted = False
-        resetGame()
+        bulletActive = False
+        enemyBulletActive = False
+        gameOver = True
     elif all(item == 4 for row in enemyList for item in row):
         enemyList = [
             [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
@@ -112,6 +111,32 @@ def displayLives():
         y = screen.get_height() - player.get_height() - 10
         screen.blit(player, (x, y))
 
+
+def renderSplitText(text, font, top_color, bottom_color):
+    """
+    Renders a text surface split horizontally into two colors.
+    """
+    # 1. Render both versions of the text fully
+    top_surf = font.render(text, True, top_color)
+    bottom_surf = font.render(text, True, bottom_color)
+    
+    # 2. Get the dimensions of the text
+    width, height = top_surf.get_size()
+    half_height = height // 2
+    
+    # 3. Create a clean transparent destination surface
+    final_surf = pygame.Surface((width, height), pygame.SRCALPHA)
+    
+    # 4. Slice and paste the halves together
+    # Top half: Draw from (0,0) to (width, half_height)
+    final_surf.blit(top_surf, (0, 0), (0, 0, width, half_height))
+    
+    # Bottom half: Draw from (0, half_height) to the end
+    final_surf.blit(bottom_surf, (0, half_height), (0, half_height, width, height - half_height))
+    
+    return final_surf
+
+
 # Initialize Pygame
 pygame.init()
 
@@ -133,7 +158,7 @@ playerScore = 0
 coins = 0
 playerSpeed = 5
 playerX = screenWidth // 2
-playerY = screenHeight // 2 + 350
+playerY = screenHeight // 2 + 420
 bulletActive = False
 bulletSpeed = 12
 
@@ -143,6 +168,7 @@ enemySpacingTop = 120
 enemySpacingLeft = 31
 enemyScale = 0.2
 enemyMoveDirectionX = "left"
+enemySpeed = 1
 # Enemies assets
 Point10 = pygame.image.load('10Points.png').convert()
 Point10 = pygame.transform.smoothscale_by(Point10, enemyScale)
@@ -209,6 +235,9 @@ enemyBulletActive = False
 lives = 3
 invincibility = False
 extraLivesGranted = False
+enemySpeed = 1
+baseEnemySpeed = 1
+gameOver = False
 # Game Loop
 running = True
 
@@ -353,7 +382,8 @@ while running:
         screen.blit(hiScoreText, hiScoreRect)
         screen.blit(currentScoreText, (10, 60))
         screen.blit(currentHiScoreText, currentHiScoreRect)
-        enemySpacingLeft += 1 if enemyMoveDirectionX == "right" else -1
+        enemySpeed = baseEnemySpeed + (sum(row.count(4) for row in enemyList) * 0.1)
+        enemySpacingLeft += enemySpeed if enemyMoveDirectionX == "right" else -enemySpeed
         if enemySpacingLeft <= 30:
             enemyMoveDirectionX = "right"   
             enemySpacingTop += enemySpacingY // 2
@@ -373,10 +403,42 @@ while running:
                 lives -= 1
 
                 if lives <= 0:
+                    wordX = screenWidth // 2
+                    wordY = screenHeight // 2 - 300
+                    gameOverString = ["G","A","M","E"," ","O","V","E","R", ""]
+                    gameOverDisplayText = ""
+                    gameOverText = renderSplitText("", font(40), (255,0,0), (255,255,255))
+                    for i in range(0,9):
+                        screen.fill((0, 0, 0))
+                        gameOverDisplayText += gameOverString[i]
+                        gameOverText = renderSplitText(gameOverDisplayText, font(40), (255,0,0), (255,255,255))
+                        gameOverTextRect = gameOverText.get_rect(center=(wordX, wordY))
+                        screen.blit(gameOverText, gameOverTextRect)
+                        time.sleep(0.05)
+                        window.flip()
+                        await asyncio.sleep(1 / fps)
+                    time.sleep(1)
                     enemyBulletActive = False
                     bulletActive = False
                     gameStarted = False
                     resetGame()
+        if gameOver:
+            wordX = screenWidth // 2
+            wordY = screenHeight // 2 - 300
+            gameOverString = ["G","A","M","E"," ","O","V","E","R", ""]
+            gameOverDisplayText = ""
+            gameOverText = renderSplitText("", font(40), (255,0,0), (255,255,255))
+            for i in range(0,9):
+                screen.fill((0, 0, 0))
+                gameOverDisplayText += gameOverString[i]
+                gameOverText = renderSplitText(gameOverDisplayText, font(40), (255,0,0), (255,255,255))
+                gameOverTextRect = gameOverText.get_rect(center=(wordX, wordY))
+                screen.blit(gameOverText, gameOverTextRect)
+                time.sleep(0.05)
+                window.flip()
+                await asyncio.sleep(1 / fps)
+            time.sleep(1)
+            resetGame()
         
         if enemyTimer >= 2000 :
             # enemy shooting logic
