@@ -1,3 +1,4 @@
+# Libraries Import
 import pygame
 import sys
 import json
@@ -8,7 +9,7 @@ import time
 # restart game
 def resetGame():
     # variables to reset
-    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted, gameOver
+    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted, gameOver, bunkers
     gameStarted = False
     playerX = screenWidth // 2
     enemyList = [
@@ -26,6 +27,7 @@ def resetGame():
     lives = 3
     extraLivesGranted = False
     gameOver = False
+    bunkers = makeBunkers()
 def checkGameOver():
     global enemySpacingTop, gameStarted, enemyList, fps, gameOver
     if (enemySpacingTop >= 597 and any(item != 4 for item in enemyList[4])) or \
@@ -70,10 +72,19 @@ def isCollide(bulletPosition, enemyIndexRow, enemyIndexCol):
     enemyType = enemyList[enemyIndexRow][enemyIndexCol]
     if enemyType == 4:
         return False
+    if enemyType == 0:
+        hitWidth, hitHeight = Point10Rect.width, Point10Rect.height
+    elif enemyType == 1:
+        hitWidth, hitHeight = Point20Rect.width, Point20Rect.height
+    elif enemyType == 2:
+        hitWidth, hitHeight = Point30Rect.width, Point30Rect.height
+    elif enemyType == 3:
+        hitWidth, hitHeight = ufoRect.width, ufoRect.height
+
     enemyX = enemyIndexCol * enemySpacingX + enemySpacingLeft
     enemyY = enemyIndexRow * enemySpacingY + enemySpacingTop
-    if (bulletPosition[0] >= enemyX and bulletPosition[0] <= enemyX + Point10Rect.width and
-        bulletPosition[1] >= enemyY and bulletPosition[1] <= enemyY + Point10Rect.height):
+    enemyRect = pygame.Rect(enemyX, enemyY, hitWidth, hitHeight)
+    if (bulletRect.colliderect(enemyRect)):
         if enemyType == 0:
             playerScore += 10
         elif enemyType == 1:
@@ -85,6 +96,8 @@ def isCollide(bulletPosition, enemyIndexRow, enemyIndexCol):
         return True
     return False
     
+
+
 def getCoordsFromIndex(enemyIndexRow, enemyIndexCol):
     global enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop
     enemyX = enemyIndexCol * enemySpacingX + enemySpacingLeft
@@ -135,6 +148,34 @@ def renderSplitText(text, font, top_color, bottom_color):
     final_surf.blit(bottom_surf, (0, half_height), (0, half_height, width, height - half_height))
     
     return final_surf
+
+def bunkerCellRect(bunker, row, col):
+    return pygame.Rect(
+        bunker[0] + col * bunkerCell,
+        bunker[1] + row * bunkerCell,
+        bunkerCell,
+        bunkerCell,
+    )
+
+
+def drawBunkers():
+    for bunker in bunkers:
+        for row in range(bunkerRows):
+            for col in range(bunkerCols):
+                if bunker[2][row][col] == 1:
+                    pygame.draw.rect(screen, (0, 255, 0), bunkerCellRect(bunker, row, col))
+
+
+def collideBunkers(bulletRect):
+    hit = False
+    for bunker in bunkers:
+        for row in range(bunkerRows):
+            for col in range(bunkerCols):
+                if bunker[2][row][col] == 1:
+                    if bulletRect.colliderect(bunkerCellRect(bunker, row, col)):
+                        bunker[2][row][col] = 0
+                        hit = True
+    return hit
 
 
 # Initialize Pygame
@@ -238,6 +279,36 @@ extraLivesGranted = False
 enemySpeed = 1
 baseEnemySpeed = 1
 gameOver = False
+
+
+# Bunkers
+# 1 = there, 0 = gone
+bunkerTemplate = [
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1],
+    [1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1],
+]
+bunkerCell = 10
+bunkerRows = len(bunkerTemplate)
+bunkerCols = len(bunkerTemplate[0])
+bunkerWidth = bunkerCols * bunkerCell
+bunkerY = 800
+bunkerCount = 4
+
+def makeBunkers():
+    # Evenly space the barriers across the screen, with the same gap on both sides
+    gap = (screenWidth - bunkerCount * bunkerWidth) // (bunkerCount + 1)
+    newBunkers = []
+    for i in range(bunkerCount):
+        grid = []
+        for row in bunkerTemplate:
+            grid.append(row[:])
+        newBunkers.append([gap + i * (bunkerWidth + gap), bunkerY, grid])
+    return newBunkers
+
+bunkers = makeBunkers()
 # Game Loop
 running = True
 
@@ -275,15 +346,20 @@ while running:
         playerX += moveX
         playerX = max(0 + playerRect.width // 2, min(screenWidth - playerRect.width // 2, playerX))
         if bulletActive:
+            previousRect = bulletRect.copy()
             bulletRect.y -= bulletSpeed
-            for i in range(len(enemyList)):
-                for j in range(len(enemyList[i])):
-                    if isCollide(bulletRect.center, i, j):
-                        enemyList[i][j] = 4
-                        bulletActive = False
-            # Reset bullet when it flies off the top of the screen
-            if bulletRect.bottom < 90:
+            # Use the path the bullet travelled this frame so it can't skip over a cell
+            if collideBunkers(previousRect.union(bulletRect)):
                 bulletActive = False
+            else:
+                for i in range(len(enemyList)):
+                    for j in range(len(enemyList[i])):
+                        if isCollide(bulletRect, i, j):
+                            enemyList[i][j] = 4
+                            bulletActive = False
+                # Reset bullet when it flies off the top of the screen
+                if bulletRect.bottom < 90:
+                    bulletActive = False
         else:
             bulletRect.center = (playerX, playerY)
         playerRect.center = (playerX, playerY)
@@ -377,6 +453,7 @@ while running:
             currentHiScoreText = scoreFont.render(str(hiScore), True, (255, 255, 255))
             currentHiScoreRect = currentHiScoreText.get_rect()
             currentHiScoreRect.topright = (935, 60)
+        drawBunkers()
         screen.blit(player, playerRect)
         screen.blit(scoreText, (10, 10))
         screen.blit(hiScoreText, hiScoreRect)
@@ -394,12 +471,17 @@ while running:
         if bulletActive:
             screen.blit(bullet, bulletRect)
         if enemyBulletActive and not invincibility:
+            previousRect = enemyBulletRect.copy()
             enemyBulletRect.y += bulletSpeed
             screen.blit(enemyBullet, enemyBulletRect)
             if enemyBulletRect.top > screenHeight:
                 enemyBulletActive = False
-            if enemyBulletRect.colliderect(playerRect):
+            elif collideBunkers(previousRect.union(enemyBulletRect)):
                 enemyBulletRect.y = -1000
+                enemyBulletActive = False
+            elif enemyBulletRect.colliderect(playerRect):
+                enemyBulletRect.y = -1000
+                enemyBulletActive = False
                 lives -= 1
 
                 if lives <= 0:
@@ -455,6 +537,7 @@ while running:
         if playerScore >= 1500 and not extraLivesGranted:
             lives += 1
             extraLivesGranted = True
+
     screen.blit(tintSurface, (0, screenHeight - tintHeight), special_flags=pygame.BLEND_RGB_MULT)
     window.flip()
     await asyncio.sleep(1 / fps)
