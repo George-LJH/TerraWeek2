@@ -217,7 +217,7 @@ scoreFont = pygame.font.Font("spaceInvadersFont.ttf", 20)
 
 #Setup variables
 gameStarted = False
-debugMode = True
+debugMode = False
 playerScore = 0
 coins = 0
 playerSpeed = 5
