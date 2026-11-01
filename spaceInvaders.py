@@ -9,7 +9,7 @@ import time
 # restart game
 def resetGame():
     # variables to reset
-    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted, gameOver, bunkers
+    global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted, gameOver, bunkers, enemyTimer, ufoActive, ufoX, ufoDirection, shotCount
     gameStarted = False
     playerX = screenWidth // 2
     enemyList = [
@@ -28,13 +28,35 @@ def resetGame():
     extraLivesGranted = False
     gameOver = False
     bunkers = makeBunkers()
+    enemyTimer = 0
+    ufoActive = False
+    ufoX = -ufoRect.width
+    ufoDirection = 1
+    shotCount = 0
 def checkGameOver():
-    global enemySpacingTop, gameStarted, enemyList, fps, gameOver
-    if (enemySpacingTop >= 597 and any(item != 4 for item in enemyList[4])) or \
-       (enemySpacingTop >= 671 and any(item != 4 for item in enemyList[3])) or \
-       (enemySpacingTop >= 745 and any(item != 4 for item in enemyList[2])) or \
-       (enemySpacingTop >= 819 and any(item != 4 for item in enemyList[1])) or \
-       (enemySpacingTop >= 893 and any(item != 4 for item in enemyList[0])):
+    global enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop
+    global gameStarted, enemyList, fps, gameOver, bulletActive, enemyBulletActive
+    enemyPlayerLine = 605
+    frontRow = -1
+
+    # Start at the bottom row and find the first row with a living enemy.
+    for rowIndex in range(len(enemyList) - 1, -1, -1):
+        for enemy in enemyList[rowIndex]:
+            if enemy != 4:
+                frontRow = rowIndex
+                break
+        if frontRow != -1:
+            break
+
+    if frontRow != -1:
+        # The bottom row normally sets the limit at 605.
+        # If bottom rows are gone, give the formation one row spacing per row.
+        rowsGone = len(enemyList) - 1 - frontRow
+        gameOverTop = enemyPlayerLine + rowsGone * enemySpacingY
+    else:
+        gameOverTop = 0
+
+    if enemySpacingTop >= gameOverTop and frontRow != -1:
         gameStarted = False
         bulletActive = False
         enemyBulletActive = False
@@ -67,7 +89,7 @@ def load(key):
 def font(size):
     return pygame.font.Font("spaceInvadersFont.ttf", size)
 
-def isCollide(bulletPosition, enemyIndexRow, enemyIndexCol):
+def isCollide(enemyIndexRow, enemyIndexCol):
     global enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, Point10Rect, playerScore
     enemyType = enemyList[enemyIndexRow][enemyIndexCol]
     if enemyType == 4:
@@ -195,13 +217,14 @@ scoreFont = pygame.font.Font("spaceInvadersFont.ttf", 20)
 
 #Setup variables
 gameStarted = False
+debugMode = True
 playerScore = 0
 coins = 0
 playerSpeed = 5
 playerX = screenWidth // 2
 playerY = screenHeight // 2 + 420
 bulletActive = False
-bulletSpeed = 12
+bulletSpeed = 8
 
 enemySpacingX = 70
 enemySpacingY = 75
@@ -257,9 +280,6 @@ enemyList = [
 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
 front = getFrontMostEnemies(enemyList)
-js.alert(random.choice(front))
-# for i in getFrontMostEnemies(enemyList):
-#     js.alert(getCoordsFromIndex(i[0], i[1]))
 
 bullet = pygame.image.load('laser.png').convert()
 bullet = pygame.transform.smoothscale_by(bullet, 0.4)
@@ -296,7 +316,13 @@ bunkerCols = len(bunkerTemplate[0])
 bunkerWidth = bunkerCols * bunkerCell
 bunkerY = 800
 bunkerCount = 4
-
+ufoActive = False
+ufoX = -ufoRect.width
+ufoY = 90
+ufoSpeed = 4
+ufoDirection = 1
+shotCount = 0
+ufoPointTable = [100, 50, 50, 150, 100, 50, 100, 300, 100, 50, 150, 100, 50, 100, 300]
 def makeBunkers():
     # Evenly space the barriers across the screen, with the same gap on both sides
     gap = (screenWidth - bunkerCount * bunkerWidth) // (bunkerCount + 1)
@@ -309,6 +335,7 @@ def makeBunkers():
     return newBunkers
 
 bunkers = makeBunkers()
+
 # Game Loop
 running = True
 
@@ -321,24 +348,27 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_z:
                 coins += 1
-            if event.key == pygame.K_RETURN:
+            if event.key == pygame.K_RETURN or event.key == pygame.K_x:
                 if not gameStarted and coins >= 1:
                     gameStarted = True
                     coins -= 1
                     playerScore = 0
                     currentTime = pygame.time.Clock()
-                    js.alert(currentTime)
             if gameStarted and event.key == pygame.K_SPACE:
                 if not bulletActive:
                     bulletRect.center = (playerX, playerY)
                     bulletActive = True
-            if event.key == pygame.K_0:
+                    shotCount += 1
+            if debugMode and event.key == pygame.K_0:
                 js.alert(f"{enemySpacingTop}, {enemySpacingLeft}")
                 js.alert(currentTime)
-            if event.key == pygame.K_r:
+            if debugMode and event.key == pygame.K_r:
                 resetGame()
-            if event.key == pygame.K_9:
+            if debugMode and event.key == pygame.K_9:
                 invincibility = not invincibility
+            if debugMode and event.key == pygame.K_8:
+                command = js.prompt("Enter command:")
+                exec(command)
     if gameStarted:
         enemyTimer += dt
         keys = pygame.key.get_pressed()
@@ -348,28 +378,22 @@ while running:
         if bulletActive:
             previousRect = bulletRect.copy()
             bulletRect.y -= bulletSpeed
-            # Use the path the bullet travelled this frame so it can't skip over a cell
             if collideBunkers(previousRect.union(bulletRect)):
                 bulletActive = False
             else:
                 for i in range(len(enemyList)):
                     for j in range(len(enemyList[i])):
-                        if isCollide(bulletRect, i, j):
+                        if isCollide(i, j):
                             enemyList[i][j] = 4
                             bulletActive = False
-                # Reset bullet when it flies off the top of the screen
                 if bulletRect.bottom < 90:
                     bulletActive = False
         else:
             bulletRect.center = (playerX, playerY)
         playerRect.center = (playerX, playerY)
-    # 2. Game Logic Updates
-    # (Update positions, check collisions, etc.)
-
     # 3. Drawing / Rendering
     screen.fill((0, 0, 0))  # Clear screen with black background
     
-    # (Draw your objects here)
     if not gameStarted:
         # Draw start screen
 
@@ -420,7 +444,7 @@ while running:
         screen.blit(Point20Text, Point20TextRect)
         screen.blit(Point30Text, Point30TextRect)
         screen.blit(ufoText, ufoTextRect)
-        screen.blit(coinText, coinTextRect)
+
     else:
         scoreText = scoreFont.render("SCORE<1>", True, (255, 255, 255))
 
@@ -459,14 +483,15 @@ while running:
         screen.blit(hiScoreText, hiScoreRect)
         screen.blit(currentScoreText, (10, 60))
         screen.blit(currentHiScoreText, currentHiScoreRect)
-        enemySpeed = baseEnemySpeed + (sum(row.count(4) for row in enemyList) * 0.1)
+        screen.blit(coinText, coinTextRect)
+        enemySpeed = baseEnemySpeed + (sum(row.count(4) for row in enemyList) * 0.03)
         enemySpacingLeft += enemySpeed if enemyMoveDirectionX == "right" else -enemySpeed
         if enemySpacingLeft <= 30:
             enemyMoveDirectionX = "right"   
-            enemySpacingTop += enemySpacingY // 2
+            enemySpacingTop += 15
         elif enemySpacingLeft >= 160:
             enemyMoveDirectionX = "left"
-            enemySpacingTop += enemySpacingY // 2
+            enemySpacingTop += 15
         checkGameOver()
         if bulletActive:
             screen.blit(bullet, bulletRect)
@@ -525,7 +550,6 @@ while running:
         if enemyTimer >= 2000 :
             # enemy shooting logic
             front = getFrontMostEnemies(enemyList)
-            # js.alert(random.choice(front))
             enemyBulletActive = True
             enemyIndexRow, enemyIndexCol = random.choice(front)
             enemyBulletRect.center = getCoordsFromIndex(enemyIndexRow, enemyIndexCol)
@@ -537,7 +561,26 @@ while running:
         if playerScore >= 1500 and not extraLivesGranted:
             lives += 1
             extraLivesGranted = True
+        if not ufoActive and random.randint(1, 600) == 1:
+            ufoActive = True
+            ufoDirection = random.choice([-1, 1])
+            ufoX = -ufoRect.width if ufoDirection == 1 else screenWidth
 
+        if ufoActive:
+            ufoX += ufoSpeed * ufoDirection
+            ufoPosition = pygame.Rect(ufoX, ufoY, ufoRect.width, ufoRect.height)
+
+            if bulletActive and bulletRect.colliderect(ufoPosition):
+                ufoPoints = ufoPointTable[(shotCount - 1) % len(ufoPointTable)]
+                playerScore += ufoPoints
+                bulletActive = False
+                ufoActive = False
+
+            if ufoX > screenWidth or ufoX + ufoRect.width < 0:
+                ufoActive = False
+        if ufoActive:
+            screen.blit(ufo, (ufoX, ufoY))
+    screen.blit(coinText, coinTextRect)
     screen.blit(tintSurface, (0, screenHeight - tintHeight), special_flags=pygame.BLEND_RGB_MULT)
     window.flip()
     await asyncio.sleep(1 / fps)
