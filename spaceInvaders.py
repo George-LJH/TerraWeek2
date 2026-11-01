@@ -1,4 +1,3 @@
-# Libraries Import
 import pygame
 import sys
 import json
@@ -8,7 +7,6 @@ import random
 import time
 # restart game
 def resetGame():
-    # variables to reset
     global gameStarted, playerX, screenWidth, screenHeight, playerScore, coins, enemyList, enemySpacingX, enemySpacingY, enemySpacingLeft, enemySpacingTop, currentTime, lives, extraLivesGranted, gameOver, bunkers, enemyTimer, ufoActive, ufoX, ufoDirection, shotCount
     gameStarted = False
     playerX = screenWidth // 2
